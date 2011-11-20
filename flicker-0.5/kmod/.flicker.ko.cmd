@@ -1,0 +1,1 @@
+cmd_/home/tess/Downloads/flicker-0.5/kmod/flicker.ko := ld -r -m elf_i386 -T /usr/src/linux-headers-2.6.38-12-generic/scripts/module-common.lds --build-id  -o /home/tess/Downloads/flicker-0.5/kmod/flicker.ko /home/tess/Downloads/flicker-0.5/kmod/flicker.o /home/tess/Downloads/flicker-0.5/kmod/flicker.mod.o

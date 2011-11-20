@@ -1,0 +1,40 @@
+# Makefile for the Flicker kernel module for Linux
+
+ifneq ($(KERNELRELEASE),)
+# kbuild part of Makefile
+
+obj-m     := flicker.o
+
+# Explicitly list the locations where .h files may be found
+ccflags-y := -I$(src)
+ccflags-y += -I$(src)/linux
+ccflags-y += -I$(src)/intel
+ccflags-y += -I$(src)/amd
+
+# no wildcard for .c files available
+flicker-y := latelaunch.o tpm.o debug.o expect.o resume.o
+
+flicker-y += linux/flickermod.o
+flicker-y += linux/sha.o
+flicker-y += linux/sysfs.o
+
+flicker-y += intel/verify.o
+flicker-y += intel/mtrrs.o
+flicker-y += intel/acpi.o
+flicker-y += intel/errors.o
+flicker-y += intel/txt.o
+flicker-y += intel/acmod.o
+
+flicker-y += amd/svm.o
+
+else
+# normal Makefile
+KDIR      := /lib/modules/$(shell uname -r)/build
+
+default:
+	$(MAKE) -C $(KDIR) M=$$PWD
+
+clean:
+	make -C $(KDIR) M=$(CURDIR) clean
+	$(RM) .*.cmd *.mod.c *.o *.ko -r .tmp* *~
+endif

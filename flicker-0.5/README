@@ -1,0 +1,324 @@
+/*
+ * Flicker for AMD SVM and Intel TXT, 32-bit non-PAE Linux and Windows.
+ *
+ * Copyright (C) 2006 - 2011 Jonathan McCune (jonmccune@cmu.edu),
+ * Bryan Parno, Adrian Perrig, Michael K. Reiter
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions, and the following disclaimer,
+ *    without modification.
+ * 2. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ */
+
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+###############################################################
+
+You can ruin your motherboard on Intel hardware if your BIOS is
+buggy. See the Intel section below.
+
+Introduction
+############
+
+Flicker is a technique to execute a piece of application logic (PAL)
+code with an extremely small TCB [1], while maintaining compatibility
+with a legacy operating system.  Flicker requires that the computer
+have support for dynamic root of trust.  The legacy operating system
+for this version is 32-bit non-PAE Linux, or 32-bit non-PAE Windows 7.
+It is assumed that you have read the EuroSys paper [1].
+
+Prerequisites
+=============
+
+Hardware
+--------
+
+To use Flicker, a PC platform supporting dynamic root of trust is
+needed.  AMD and Intel have implemented this differently. A v1.2 TPM
+is also required (and it must be enabled and activated in the BIOS).
+
+The AMD version of Flicker requires a processor supporting the SKINIT
+instruction, a v1.2 TPM [2], and a chipset which provides memory
+protection for the Flicker code.  The SKINIT instruction is available
+with newer AMD64 processors [3]. Look for 'svm' in /proc/cpuinfo. In
+the BIOS, you must enable hardware virtualization support.
+
+The Intel version of Flicker requires a processor supporting the
+GETSEC[SENTER] instruction, a v1.2 TPM [2], and a chipset which
+provides memory protection for the Flicker code.  These features are
+available on vPro-branded systems supporting Intel Trusted eXecution
+Technology (TXT) [6]. Look for 'smx' and 'vmx' in /proc/cpuinfo. In
+BIOS, you must enable hardware virtualization support (VT), Trusted
+eXecution Technology (TXT), and VT-d. There are known-bad (really bad;
+you could RUIN YOUR MOTHERBOARD) BIOSes out there for TXT.  Upgrade
+your BIOS to the newest available version.
+
+To verify that your system has a v1.2 TPM:
+$ modprobe tpm_tis force=1 interrupts=0
+$ cat `find /sys -name pcrs`
+
+You should have 24 PCRs listed (0-23).  If you have only 16 PCRs
+(0-15), then you have a v1.1b TPM, and Flicker won't work.
+
+Software
+--------
+
+You must use a non-PAE Linux kernel.  If your system has multiple
+gigabytes of memory there is a good chance your Linux installer
+configured a PAE kernel.  If the output of `uname -a` includes pae,
+you need to use a different kernel. Multiprocessor systems are
+supported.
+
+Intel hardware requires a chipset-specific SINIT (aka Authenticated
+Code) module, which can be obtained from the tboot project's web page
+[7].
+
+Windows requirements can be found in ./kmod/windows/README.txt.  In
+short, you must change the boot configuration to be non-PAE and
+uniprocessor.
+
+Executing a Flicker session
+###########################
+
+Build the kmod in the kmod/ subdirectory.  Note that you need to have
+the headers installed for your kernel.  Investigate 'apt-get install
+linux-headers-[version]' or similar.
+
+cd kmod/
+ln -s Makefile.linux Makefile
+make
+
+Build the pal by invoking 'make' in the pal/ subdirectory.
+
+Cross your fingers and execute ./go.sh.
+
+The source files are reasonably well commented.  Go read the code. :)
+
+Intel-specific requirements
+===========================
+
+MAKE SURE YOUR BIOS IS UP TO DATE.  In particular, if you have an HP
+8530p, executing this code with BIOS version F.09 WILL RUIN YOUR
+MOTHERBOARD.  We have performed successful tests with version F.0E.
+Others have reported similar problems with various hardware on the
+tboot-devel mailing list.
+
+Start by testing Intel's tboot [7] on your system.  Go to the tboot
+page [7], download the code, and follow its README.  If tboot won't
+work, Flicker won't either. You will likely end up with an SINIT
+module in your /boot directory, which is a requirement for Flicker.
+If you have an Intel system, and email for help, our first question
+will be whether you have tried tboot.
+
+Components
+##########
+
+:kmod:
+  OS-specific drivers to support Flicker.
+:kmod/intel:
+  Code specific to systems with Intel processors.
+:kmod/linux:
+  Linux driver.
+:kmod/windows:
+  Windows driver.  See kmod/windows/README.txt.
+:kmod/amd:
+  Code specific to systems with AMD processors.
+:pal:
+  CPU-agnostic and OS-agnostic PAL with printf, "hash trick", and TPM
+  support.
+:common:
+  Some common structure definitions that need to be consistent between
+  the driver and the PAL.
+
+FAQ
+###
+
+: Will Flicker run on my machine? :
+
+  If it meets the Prerequisites above, Flicker _should_ run.  However,
+  it has only been tested on machines that we have access to.
+
+: I don't have a Flicker-capable machine. Can I still develop a
+  Flicker module? :
+
+  Yes, AMD's SimNow [8] supports the SKINIT instruction.  However,
+  there will be no TPM support included.  In fact, we have encountered
+  machines in the wild that will execute SKINIT but do not include a
+  TPM.  These can be useful for developing application-specific
+  functionality without requiring a reboot during a debug cycle.
+
+: I want to buy a machine to run Flicker. What should I buy? :
+
+  The AMD version has been tested on:
+
+  HP ProBook 6555b
+  Dell PowerEdge T105 server
+  Dell Optiplex 740 workstation
+  HP dc5750 workstation - runs but buggy - not recommended
+
+  The Intel version has been tested on:
+
+  HP dc7800 workstation
+  Dell Optiplex 755 workstation
+  Lenovo T400 laptop
+  HP 8530p laptop  
+  HP 8540p laptop
+  HP Elite 8100 desktop
+
+: Is Flicker bug-free? :
+
+  Certainly not in this version.  At this point Flicker most decidedly
+  remains an academic prototype.  However, its architecture and small
+  size suggest that a bug-free implementation may be attainable by
+  buggy human beings. :) Known problems include excessive I/O
+  permissions to ring 3 PAL code, excessive memory access by PAL
+  segment descriptors due to need to access the TPM from ring 3
+  without system calls, and a failure to expand DMA protections beyond
+  those put in place automatically by SKINIT / SENTER.
+
+
+Known Issues
+############
+
+The current implementation will cause your Linux system to "lose
+time."  I.e., after invoking numerous Flicker sessions, your system
+clock will appear to have drifted backwards.  Certain devices do not
+like to have their interrupts left pending for the entire Flicker
+session, and may cause the system to be unstable.
+
+AMD-specific
+============
+
+The HP dc5750 contains a buggy south bridge, that prevents the CPU
+from successfully sending the contents of the SLB to the TPM for
+hashing.  The measurement that ends up in PCR 17 may appear to be
+random and unrelated to the actual SLB, and will not be consistent
+across invocations.  No fix available.
+
+Intel-specific
+==============
+
+Invoking GETSEC[SENTER] with BIOS version F.09 on an HP 8530p laptop
+will ruin the motherboard by sending the machine into an endless loop
+of reboots.  Update your BIOS before even thinking about trying this
+code. HP includes instructions on how to attempt recovery, but they
+did not work for us:
+http://h20000.www2.hp.com/bizsupport/TechSupport/Document.jsp?objectID=c01658899&lang=en&cc=us&taskId=135&prodSeriesId=3688868&prodTypeId=321957
+
+Though we have not tested this ourselves, it has been reported (on the
+tboot-devel mailing list) that the Intel DQ45CB motherboard exhibits a
+similar reboot loop.  We are unaware of a workaround at this time,
+though a good place to start is to look for a newer BIOS version.
+
+Attempting to use this Flicker code with an SINIT module older than
+version 17 will prevent the invocation of multiple Flicker sessions
+during a single boot cycle.  I.e., upon attempting to invoke a second
+Flicker session during a single boot cycle, the system will reset.
+Using tboot on the subsequent boot cycle to read LT.ERRORCODE will
+reveal progress code 0f and error code 1110: "Current values of VT-d
+PMR registers do not match requested values in SinitMleData." This can
+be worked around in software but it is better to simply use a newer
+SINIT module.
+
+
+250-line TCB in flicker-0.1
+###########################
+
+This release does not include the code from flicker-0.1 due to the
+licensing change from GPL to BSD-style.  Version 0.1 remains available
+on the Flicker project web page at CMU:
+http://sparrow.ece.cmu.edu/group/flicker.html
+
+References
+##########
+
+[1] Flicker: An Execution Infrastructure for TCB Minimization.
+    Jonathan M. McCune, Bryan Parno, Adrian Perrig, Michael K. Reiter,
+    and Hiroshi Isozaki. The European Conference on Computer Systems
+    (EuroSys), April 2008.
+    http://sparrow.ece.cmu.edu/group/pub/mccune_parno_perrig_reiter_isozaki_eurosys08.pdf
+    For more details on Flicker, see
+    http://sparrow.ece.cmu.edu/group/flicker.html
+[2] TCG TPM Specification v1.2 Part 3 Commands -
+    https://www.trustedcomputinggroup.org/specs/TPM/
+[3] AMD64 Architecture Programmer's Manual Vol. 2 -
+    http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/24593.pdf
+[4] TPM Interface Specification -
+    http://www.trustedcomputinggroup.org/developers/pc_client
+[5] OSLO - The Open Secure LOader -
+    http://os.inf.tu-dresden.de/~kauer/oslo/
+[6] Intel Trusted Execution Technology Developer's Guide: Measured
+    Launched Environment Developer's Guide - 
+    http://download.intel.com/technology/security/downloads/315168.pdf
+[7] Intel Trusted Boot - http://tboot.sourceforge.net/
+[8] AMD SimNow - http://developer.amd.com/cpu/simnow/
+[9] Memoir: Practical State Continuity for Protected Modules.
+    Bryan Parno, Jacob R. Lorch, John R. Douceur, James Mickens, and
+    Jonathan M. McCune. IEEE Symposium on Security and Privacy, May
+    2011.
+
+Acknowledgements
+################
+
+We are grateful to Bernhard Kauer at TU Dresden for the OSLO project
+[5] which helped get Flicker started.  Leendert van Doorn at AMD
+provided encouragement to make the TCB smaller as far back as 2004. He
+and Elsie Wahlig provided essential hardware support. Ed Schwartz
+helped find bugs in the Intel code. Everybody on the tboot-devel
+mailing list has been extremely supportive and encouraging.
+
+Todos
+#####
+
+Most of these are straightforward, contingent on available time and
+resources.  If you are interested in contributing, please email
+jonmccune@cmu.edu.  Ideally, your email includes a patch.
+
+- Set DMA-protected memory regions explicitly instead of depending on
+  processor / chipset defaults.
+- Expand DMA-protected memory regions to cover the entire PAL.
+- Integrate better with Linux kernel's TPM driver
+- Include better support for calculating expected PCR values when
+  launching a particular PAL
+- Implement exception handling to keep the system up if a PAL crashes
+- Compensate for the Linux kernel's "lost time" during a Flicker
+  session
+- Be more stable
+
+Changelog
+#########
+
+flicker-0.1: Initial public release of AMD-specific code
+  - code corresponds to all claims in the EuroSys paper
+flicker-0.2: Add support for Intel TXT
+  - Intel and AMD versions independent; no integration
+flicker-0.3: Intel-only TPM NV RAM experimentation; no public release
+flicker-0.4: Memoir-related [9]; no public release
+  - includes AMD microcode clear support (NO reloading of microcode currently; use at your own risk)
+  - improvements to AMD version to support large parameters, etc as part of Memoir project
+  - improvements to AMD version to work without special kernel compilation (i.e., stock Ubuntu non-PAE 32-bit kernel)
+flicker-0.5:
+  - removed all GPL'd code.  release is strictly BSD-style licensed or Dual BSD/GPL for Linux kernel module
+  - code from tboot project obsoletes the TPM-related code from older versions
+  - unification of Linux kmod across AMD and Intel 
+  - unification of PAL across AMD and Intel, [TODO] Windows and Linux 
+  - added support for Windows 7 32-bit
+  - Linux version no longer depends on special linux kernel, but must be 32-bit and non-PAE
+  - run Intel PAL code in ring 3, isolated from the legacy OS state
+  - clear microcode before SKINIT on AMD processors
+  - in-memory logging for systems with no serial port
+  - single unified kernel module and PAL codebase that is processor-agnostic.
+  - compatible with most distributions' shipped non-PAE 32-bit Linux kernel builds

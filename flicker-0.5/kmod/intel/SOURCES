@@ -1,0 +1,11 @@
+TARGETNAME=IntelTxt
+TARGETPATH=obj
+TARGETTYPE=DRIVER_LIBRARY
+
+BUILD_PRODUCES=INTEL_TXT
+
+TARGETLIBS=$(DDK_LIB_PATH)\Ntstrsafe.lib
+
+INCLUDES=..\;..\amd;..\windows
+
+SOURCES=acmod.c acpi.c errors.c mtrrs.c txt.c verify.c

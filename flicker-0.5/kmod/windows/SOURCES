@@ -1,0 +1,14 @@
+TARGETNAME=FlickerDrv
+TARGETPATH=obj
+TARGETTYPE=DRIVER
+
+BUILD_CONSUMES = AMD_SVM
+BUILD_CONSUMES = INTEL_TXT
+
+TARGETLIBS=$(DDK_LIB_PATH)\Ntstrsafe.lib \
+	   ..\amd\$O\AmdSvm.lib \
+	   ..\intel\$O\IntelTxt.lib
+
+INCLUDES=..\;..\intel;..\amd
+
+SOURCES=main.c ioctl.c ..\latelaunch.c ..\debug.c ..\tpm.c ..\resume.c
