@@ -1,10 +1,12 @@
-all: client server
+TARGETS=client server
+
+all: $(TARGETS)
 
 client: client.c
-	gcc client.c -o client
+	gcc $< -o $@ -DDEBUG
 
 server: server.c
-	gcc server.c -o server
+	gcc $< -o $@ -DDEBUG
 
 clean:
-	rm -f client server pal.bin flicker_result
+	rm -f client server pal.bin server_flicker_result client_flicker_result
