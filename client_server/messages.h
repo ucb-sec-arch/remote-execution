@@ -3,7 +3,7 @@
 
 #define MAX_PAYLOAD 80
 
-enum { SERVER_READY, SENDING_PAL, EXEC_PAL};
+enum { SERVER_READY, CLIENT_SEND_PAL, CLIENT_EXEC_PAL, SERVER_PAL_RESULT};
 
 typedef struct packet {
     int hdr_type;

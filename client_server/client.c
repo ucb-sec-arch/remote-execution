@@ -10,9 +10,9 @@
 #include "messages.h"
 
 #define MAX_LEN 20
+#define PAL_RESULT_NAME "client_pal_result"
 
 char pal_name[MAX_LEN];
-char READY_MSG[] = "Server ready";
 
 int init_client(int port, char* hostname)
 {
@@ -47,7 +47,7 @@ void execute_pal(int sockfd)
     packet_t* packet;
 
     packet = (packet_t*)calloc(1, sizeof(packet_t));
-    packet->hdr_type = EXEC_PAL;
+    packet->hdr_type = CLIENT_EXEC_PAL;
 
     send(sockfd, (void*)packet, sizeof(packet_t), 0);
     free(packet);
@@ -64,12 +64,12 @@ void send_pal(int sockfd)
     fflush(stdout);
 
     while(!feof(pal)) {
-        memset(msg, '\0', MAX_PAYLOAD * sizeof(char)); 
+        memset(msg, '\0', MAX_PAYLOAD * sizeof(char));
         num_items = fread(msg, sizeof(char), MAX_PAYLOAD, pal);
 
         packet = (packet_t*)calloc(1, sizeof(packet_t));
 
-        packet->hdr_type = SENDING_PAL;
+        packet->hdr_type = CLIENT_SEND_PAL;
         packet->payload_len = num_items * sizeof(char);
         memcpy(packet->payload, msg, packet->payload_len);
 
@@ -84,9 +84,16 @@ void send_pal(int sockfd)
 
 void process_msg(int sockfd, packet_t* packet, int len)
 {
+    FILE* f;
+
     switch(packet->hdr_type) {
         case SERVER_READY:
             send_pal(sockfd);
+            break;
+        case SERVER_PAL_RESULT:
+            f = fopen(PAL_RESULT_NAME, "a");
+            fprintf(f, "%s", packet->payload);
+            fclose(f);
             break;
         default:
             printf("! %s Invalid hdr type: %d\n", __func__, packet->hdr_type);
