@@ -7,4 +7,4 @@ server: server.c
 	gcc server.c -o server
 
 clean:
-	rm -f client server pal.bin flicker_result
+	rm -f client server pal.bin server_flicker_result client_flicker_result

@@ -12,7 +12,7 @@ sync
 if [ `grep flicker /proc/modules | wc -l` = "0" ]
     then
     echo "Inserting flicker.ko module"
-    insmod /home/tess/Downloads/flicker-0.5/kmod/flicker.ko
+    insmod /home/tess/Downloads/remote-execution/flicker-0.5/kmod/flicker.ko
 fi
 
 # Disable (up to 8) APs

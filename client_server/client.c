@@ -103,27 +103,25 @@ void process_msg(int sockfd, packet_t* packet, int len)
 void __attribute__((noreturn)) client_process(int sockfd)
 {
     int fd;
-    fd_set clientfds;
+    fd_set clientfds, testfds;
     packet_t packet;
     int len;
 
     FD_ZERO(&clientfds);
     FD_SET(sockfd, &clientfds);
-    FD_SET(0, &clientfds);
 
     /* Now wait for messages from the server */
     while (1) {
-        select(FD_SETSIZE, &clientfds, NULL, NULL, NULL);
+        testfds = clientfds;
+
+        select(FD_SETSIZE, &testfds, NULL, NULL, NULL);
 
         if (FD_ISSET(sockfd, &clientfds)) {
             memset((void*)&packet, '\0', sizeof(packet_t));
             len = recv(sockfd, (void*)&packet, sizeof(packet_t), 0);
 
-            printf("* Receive a message type: %d\n", packet.hdr_type);
             process_msg(sockfd, &packet, len);
         }
-
-        FD_ZERO(&clientfds);
     }
 }
 

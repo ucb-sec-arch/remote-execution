@@ -39,6 +39,8 @@ void execute_flicker(int client_fd)
     FILE* pal_result;
     packet_t* packet;
 
+    printf("* Executing PAL\n");
+
     system("./go.sh > server_flicker_result");
 
     printf("* Sending PAL result to client\n");
@@ -103,7 +105,7 @@ void __attribute__((noreturn)) server_process(int server_fd)
                         FD_SET(client_fd, &readfds);
                         fd_array[num_clients]=client_fd;
 
-                        printf("* Client %d joined\n",num_clients++);
+                        printf("* Client joined\n");
 
                         packet_t first_packet;
                         first_packet.hdr_type = SERVER_READY;
@@ -117,7 +119,7 @@ void __attribute__((noreturn)) server_process(int server_fd)
                     memset((void*)&packet, '\0', sizeof(packet_t));
                     len = recv(fd, (void*)&packet, sizeof(packet_t), 0);
 
-                    process_msg(client_fd, &packet, len);
+                    process_msg(fd, &packet, len);
                 }
             }
         }
