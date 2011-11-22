@@ -7,11 +7,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "server.h"
 #include "messages.h"
-
-#define MAX_CLIENTS 1
-
-static const char PAL_NAME[] = "pal.bin";
 
 int init_server(int port)
 {
@@ -19,7 +16,7 @@ int init_server(int port)
     struct sockaddr_in server_address;
     int addresslen = sizeof(struct sockaddr_in);
 
-    printf("* Server program starting\n");
+    debug_printf("* Server program starting\n");
 
     /* Create and name a socket for the server */
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -34,44 +31,47 @@ int init_server(int port)
     return server_fd;
 }
 
-void execute_flicker(int client_fd)
-{
-    FILE* pal_result;
-    packet_t* packet;
-
-    printf("* Executing PAL\n");
-
-    system("./go.sh > server_flicker_result");
-
-    printf("* Sending PAL result to client\n");
-
-    pal_result = fopen("server_flicker_result", "r");
-
-    while (!feof(pal_result)) {
-        packet = (packet_t*)calloc(1, sizeof(packet_t));
-        packet->hdr_type = SERVER_PAL_RESULT;
-        fgets(packet->payload, MAX_PAYLOAD, pal_result);
-        packet->payload_len = strlen(packet->payload);
-
-        send(client_fd, (void*)packet, sizeof(packet_t), 0);
-        free(packet);
-    }
-}
-
-void process_msg(int client_fd, packet_t* packet, int len)
+void handle_client_send_pal(int client_fd, packet_t* packet, int len)
 {
     FILE* f;
 
-    switch(packet->hdr_type) {
-        case CLIENT_SEND_PAL:
-            f = fopen(PAL_NAME, "ab");
-            fwrite(packet->payload, sizeof(char), packet->payload_len / sizeof(char), f);
-            fclose(f);
+    f = fopen(PAL_NAME, "ab");
+    fwrite(packet->payload, sizeof(char), packet->payload_len / sizeof(char), f);
+    fclose(f);
+}
 
-            break;
-        case CLIENT_EXEC_PAL:
-            execute_flicker(client_fd);
+void send_pal_result(int client_fd)
+{
+    FILE* pal_result;
+    packet_t* server_packet;
+
+    debug_printf("* Sending PAL result to client\n");
+    pal_result = fopen("server_flicker_result", "r");
+
+    while (!feof(pal_result)) {
+        server_packet = (packet_t*)calloc(1, sizeof(packet_t));
+        server_packet->hdr_type = SERVER_PAL_RESULT;
+        fgets(server_packet->payload, MAX_PAYLOAD, pal_result);
+        server_packet->payload_len = strlen(server_packet->payload);
+
+        send(client_fd, (void*)server_packet, sizeof(packet_t), 0);
+        free(server_packet);
     }
+
+    server_packet = (packet_t*)calloc(1, sizeof(packet_t));
+    server_packet->hdr_type = SERVER_FINISH_PAL;
+
+    send(client_fd, (void*)server_packet, sizeof(packet_t), 0);
+    free(server_packet);
+}
+
+void handle_client_exec_pal(int client_fd, packet_t* packet, int len)
+{
+    debug_printf("* Executing PAL\n");
+
+    system("./go.sh > server_flicker_result");
+
+    send_pal_result(client_fd);
 }
 
 void __attribute__((noreturn)) server_process(int server_fd)
@@ -105,7 +105,7 @@ void __attribute__((noreturn)) server_process(int server_fd)
                         FD_SET(client_fd, &readfds);
                         fd_array[num_clients]=client_fd;
 
-                        printf("* Client joined\n");
+                        debug_printf("* Client joined\n");
 
                         packet_t first_packet;
                         first_packet.hdr_type = SERVER_READY;
@@ -118,8 +118,7 @@ void __attribute__((noreturn)) server_process(int server_fd)
                 } else if (fd) { /* Process client specific activity */
                     memset((void*)&packet, '\0', sizeof(packet_t));
                     len = recv(fd, (void*)&packet, sizeof(packet_t), 0);
-
-                    process_msg(fd, &packet, len);
+                    handle_msg[packet.hdr_type](fd, &packet, len);
                 }
             }
         }
