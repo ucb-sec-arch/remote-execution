@@ -130,7 +130,8 @@ int main(int argc, char *argv[])
     int port;
     int sockfd;
 
-    port = atoi(argv[1]);
+    // port = atoi(argv[1]);
+    port = 7400;
     sockfd = init_server(port);
     server_process(sockfd);
 }

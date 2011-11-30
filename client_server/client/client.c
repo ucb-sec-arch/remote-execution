@@ -124,9 +124,13 @@ int main(int argc, char *argv[])
     char hostname[100];
     int sockfd;
 
-    port = atoi(argv[1]);
-    strcpy(hostname,argv[2]);
-    strcpy(pal_name, argv[3]);
+    port = 7400;
+    strcpy(hostname, "127.0.0.1");
+    strcpy(pal_name, "input");
+
+    // port = atoi(argv[1]);
+    // strcpy(hostname,argv[2]);
+    // strcpy(pal_name, argv[3]);
 
     sockfd = init_client(port, hostname);
 

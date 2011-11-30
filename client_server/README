@@ -1,0 +1,1 @@
+After doing a "make" on the toplevel, the server and client could be run with "./server" and "./client" specifically. Right now, the ports, hostname, etc are hardcoded for simplicity.
