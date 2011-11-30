@@ -1,2 +1,5 @@
 *.swp
+*.o
 cscope*
+*.elf
+*.bin
