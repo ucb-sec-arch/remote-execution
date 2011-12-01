@@ -38,6 +38,35 @@ int init_client(int port, char* hostname)
     return sockfd;
 }
 
+void send_pal_input(int fd)
+{
+    FILE* pal_input;
+    packet_t* client_packet;
+    char msg[MAX_PAYLOAD];
+    int num_items;
+
+    debug_printf("* Sending PAL input to server\n");
+
+    pal_input = fopen(pal_input_name, "rb");
+
+    while(!feof(pal_input)) {
+        memset(msg, '\0', MAX_PAYLOAD * sizeof(char));
+        num_items = fread(msg, sizeof(char), MAX_PAYLOAD, pal_input);
+        // fgets(msg, sizeof(char) * MAX_PAYLOAD, pal_input);
+
+        client_packet = (packet_t*)calloc(1, sizeof(packet_t));
+
+        client_packet->hdr_type = CLIENT_SEND_INPUT;
+        client_packet->payload_len = num_items * sizeof(char);
+        memcpy(client_packet->payload, msg, client_packet->payload_len);
+
+        send(fd, (void*)client_packet, sizeof(packet_t), 0);
+        free(client_packet);
+    }
+
+    fclose(pal_input);
+}
+
 void execute_pal(int fd)
 {
     packet_t* packet;
@@ -51,13 +80,14 @@ void execute_pal(int fd)
 
 void handle_server_ready(int fd, packet_t* packet, int len)
 {
-    FILE* pal = fopen(pal_name, "rb");
+    FILE* pal;
     packet_t* client_packet;
     char msg[MAX_PAYLOAD];
     int num_items;
 
     debug_printf("* Sending PAL to server\n");
-    fflush(stdout);
+
+    pal = fopen(pal_name, "rb");
 
     while(!feof(pal)) {
         memset(msg, '\0', MAX_PAYLOAD * sizeof(char));
@@ -74,6 +104,8 @@ void handle_server_ready(int fd, packet_t* packet, int len)
     }
 
     fclose(pal);
+
+    send_pal_input(fd);
 
     execute_pal(fd);
 }
@@ -126,11 +158,12 @@ int main(int argc, char *argv[])
 
     port = 7400;
     strcpy(hostname, "127.0.0.1");
-    strcpy(pal_name, "input");
+    strcpy(pal_name, "../../flicker-0.5/pal/pal.bin");
 
     // port = atoi(argv[1]);
     // strcpy(hostname,argv[2]);
-    // strcpy(pal_name, argv[3]);
+    // strcpy(pal_name, argv[1]);
+    strcpy(pal_input_name, argv[1]);
 
     sockfd = init_client(port, hostname);
 

@@ -38,6 +38,10 @@ int nextOutputPos;
 
 int pm_init(void *inbuf, int inbuf_length, void *outbuf, int outbuf_length)
 {
+    int i;
+
+    printk("%s inputBuffer: %s\n", __func__, (char*)inbuf);
+
     inputBuffer = (char *) inbuf;
     inputBufferLength = inbuf_length;
     outputBuffer = (char *) outbuf;
@@ -48,6 +52,13 @@ int pm_init(void *inbuf, int inbuf_length, void *outbuf, int outbuf_length)
 
     printk("Params initialized: inputBuffer @ 0x%p, outputBuffer @ 0x%p\n",
            inputBuffer, outputBuffer);
+
+    /* FIXME: Dumb hack to convert from ASCII to real number */
+    for (i = 0;i < inbuf_length;i++) {
+        if ((int)inputBuffer[i] >= 0x30 && (int)inputBuffer[i] < 0x40) {
+            inputBuffer[i] = (int)inputBuffer[i] - 0x30;
+        }
+    }
 
     dump_bytes((unsigned char *)inputBuffer, 128);
 
@@ -120,7 +131,7 @@ int pm_get_addr(int param_type, char **data)
         return -1;
     }
     numParams = * (int *) currentOffset;
-    printk("pm_get_addr: numParams = %d\n", numParams);
+    printk("pm_get_addr: numParams = %d endofInputBuf: %p length: %d\n", numParams, endOfInputBuffer, inputBufferLength);
     currentOffset += sizeof(int);
 
     // Search through the input buffer for a parameter with the requested
@@ -132,6 +143,7 @@ int pm_get_addr(int param_type, char **data)
         // data past the end of the input buffer.
 
         if (currentOffset + sizeof(int) + sizeof(int) > endOfInputBuffer) {
+            printk("HERE: %s\n", __func__);
             return -1;
         }
 
@@ -148,17 +160,23 @@ int pm_get_addr(int param_type, char **data)
 
         paramSize = * (int *) currentOffset;
         currentOffset += sizeof(int);
+
         if (paramSize < 0 || paramSize > inputBufferLength) {
+            printk("2nd if");
             return -1;
         }
         if (currentOffset + paramSize > endOfInputBuffer) {
+            printk("3rd if");
             return -1;
         }
+
+        // printk("pm_get_addr: paramIndex: %d paramType: %d paramSize: %d data: %d\n", paramIndex, paramType, paramSize, *currentOffset);
 
         // If the parameter's type matches the one we're looking for, then
         // we're done.  Return the data and the size.
 
         if (paramType == param_type) {
+            printk("At %s: found it!\n", __func__);
             *data = currentOffset;
             return paramSize;
         } else {

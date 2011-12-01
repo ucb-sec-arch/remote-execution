@@ -31,22 +31,13 @@ int init_server(int port)
     return server_fd;
 }
 
-void handle_client_send_pal(int client_fd, packet_t* packet, int len)
-{
-    FILE* f;
-
-    f = fopen(PAL_NAME, "ab");
-    fwrite(packet->payload, sizeof(char), packet->payload_len / sizeof(char), f);
-    fclose(f);
-}
-
 void send_pal_result(int client_fd)
 {
     FILE* pal_result;
     packet_t* server_packet;
 
     debug_printf("* Sending PAL result to client\n");
-    pal_result = fopen("server_flicker_result", "r");
+    pal_result = fopen(PAL_RESULT_NAME, "r");
 
     while (!feof(pal_result)) {
         server_packet = (packet_t*)calloc(1, sizeof(packet_t));
@@ -63,6 +54,25 @@ void send_pal_result(int client_fd)
 
     send(client_fd, (void*)server_packet, sizeof(packet_t), 0);
     free(server_packet);
+}
+
+void handle_client_send_pal(int client_fd, packet_t* packet, int len)
+{
+    FILE* f;
+
+    f = fopen(PAL_NAME, "ab");
+    fwrite(packet->payload, sizeof(char), packet->payload_len / sizeof(char), f);
+    fclose(f);
+}
+
+void handle_client_send_input(int client_fd, packet_t* packet, int len)
+{
+    FILE* f;
+
+    f = fopen(PAL_INPUT_NAME, "ab");
+    // fprintf(f, "%s", packet->payload);
+    fwrite(packet->payload, sizeof(char), packet->payload_len / sizeof(char), f);
+    fclose(f);
 }
 
 void handle_client_exec_pal(int client_fd, packet_t* packet, int len)

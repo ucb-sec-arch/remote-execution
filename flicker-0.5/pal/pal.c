@@ -158,23 +158,34 @@ void gdt_debug(void) {
  * software by function hash_trick().
  */
 
+#define FIB /* Fibonacci program */
+
 int pal_main(void) __attribute__ ((section (".text.slb")));
 int pal_main(void)
 {
-    printk("Hello erom pal_main()\n");
+    printk("Hello from pal_main()\n");
 
+#ifdef FIB
     int i = 0;
-    int num = 7;
-    int arr[num];
- 
+    int* test;
+    int len = pm_get_addr(1, (char**)&test);
+    int arr[test[0]];
+
+    printk("At %s num fib: %d len: %d\n", __func__, test[0], len);
+
     arr[0] = 1;
     arr[1] = 1;
 
-    for (i = 2; i < num;i++ ) {
+    for (i = 2; i < test[0];i++ ) {
         arr[i] = arr[i-1] + arr[i-2];
     }
 
-    log_event(LOG_LEVEL_VERBOSE, "fibonacci: %d %d %d %d %d %d %d\n", arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6]);
+    printk("Fibonacci: ");
+    for (i = 0;i < test[0];i++) {
+        printk("%d ", arr[i]);
+    }
+    printk("\n");
+#endif /* FIB */
 
     return 0;
 }

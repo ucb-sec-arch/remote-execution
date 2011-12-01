@@ -64,7 +64,8 @@ echo -n m > $SYSFSPATH/control
 echo -n I > $SYSFSPATH/control
 # Try this echo command from the bash prompt and pipe through hd to get:
 #00000000  01 00 00 00 ca fe f0 0d  04 00 00 00 de ad be ef  |................|
-echo -ne \\x01\\x00\\x00\\x00\\x0d\\xf0\\xfe\\xca\\x04\\x00\\x00\\x00\\xef\\xbe\\xad\\xde > $SYSFSPATH/data
+# echo -ne \\x01\\x00\\x00\\x00\\x0d\\xf0\\xfe\\xca\\x04\\x00\\x00\\x00\\xef\\xbe\\xad\\xde > $SYSFSPATH/data
+cat server_flicker_input > $SYSFSPATH/data
 echo -n i > $SYSFSPATH/control
 
 # Launch Flicker session

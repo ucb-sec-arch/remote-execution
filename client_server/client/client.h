@@ -3,6 +3,7 @@
 
 #define MAX_LEN 20
 #define PAL_RESULT_NAME "client_flicker_result"
+#define PAL_INPUT_NAME "client_flicker_input"
 
 #if DEBUG
     #define debug_printf(...) printf(__VA_ARGS__)
@@ -11,10 +12,13 @@
 #endif /* DEBUG */
 
 char pal_name[MAX_LEN];
+char pal_input_name[MAX_LEN];
 
 int init_client(int port, char* hostname);
 
 void execute_pal(int sockfd);
+
+void send_pal_input(int sockfd);
 
 void __attribute__((noreturn)) client_process(int sockfd);
 
