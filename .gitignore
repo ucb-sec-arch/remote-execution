@@ -3,3 +3,6 @@
 cscope*
 *.elf
 *.bin
+*server_flicker_result
+*client_flicker_result
+*server_flicker_input
