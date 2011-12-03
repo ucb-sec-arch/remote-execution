@@ -6,3 +6,5 @@ cscope*
 *server_flicker_result
 *client_flicker_result
 *server_flicker_input
+*client_exec
+*server_exec

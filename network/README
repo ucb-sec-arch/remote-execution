@@ -1,0 +1,11 @@
+After doing a "make" on the toplevel, 
+
+The server and client could be run in their respective directory with "sudo ./server_exec" (since it needs to disable the cpus and stuffs for flicker to work) and "./client_exec <pal_name> <input_to_pal>". Flicker's pal binary is currently located at "../flicker-0.5/pal/pal.bin" directory. Right now, the ports, hostname and other network specific informations are hardcoded for simplicity. 
+
+How to create input for PAL:
+- Due to annoying endianness and the interface defined by flicker, the format of the input is kinda bizarre. Take a look at ./client/fib_input. The input "1000100040009000" means that there is 1 parameter with "type" 1, 4 bytes in size, with the value of 9. The input is later used in the pal binary (pal/pal.c:pal_main()).
+
+Turning on/off encryption and/or Intel TXT:
+- This is done in the top-level Makefile (Should be pretty self-explanatory)
+
+Note: Some of the outputs of the program are displayed in the console while others are put in dmesg. If for some reason it's not displayed in dmesg, you could use minicom or other serial console monitor to retrieve these outputs.
