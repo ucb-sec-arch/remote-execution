@@ -1,7 +1,0 @@
-After doing a "make" on the toplevel, 
-
-The server and client could be run in their respective directory with "sudo ./server" (since it needs to disable the cpus and stuffs for flicker to work) and "./client <input_to_pal>". The client will take the pal binary from "../flicker-0.5/pal/pal.bin" directory. Right now, the ports, hostname and other network specific informations are hardcoded for simplicity. 
-
-Due to annoying endianness and the interface defined by flicker, the format of the input is kinda bizarre. Take a look at ./client/fib_input. The input "1000100040009000" means that there is 1 parameter with "type" 1, 4 bytes in size, with the value of 9. The input is later used in the pal binary (pal/pal.c:pal_main()).
-
-Note: Some of the outputs of the program are displayed in the console while others are put in dmesg. If for some reason it's not displayed in dmesg, you could use minicom or other serial console monitor to retrieve these outputs.
